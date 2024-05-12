@@ -63,7 +63,6 @@ void printCoord(const char *c, coord_t coord);
 
 void printCircle(const char *c, circle_t circle);
 
-
 void printPointAsCoord(const char *c, coord_t base, point_t point);
 
 #endif // TRILATERATE_HPP

@@ -81,20 +81,29 @@ int circleCircleIntersection(circle_t c0, circle_t c1, point_t *p1, point_t *p2)
 //  1     Succes (result in p)
 int lineLineIntersect(line_t l1, line_t l2, point_t *p)
 {
-  double m, x, y;
-
   if (l1.slope == l2.slope) // No cross section
     return 0;
+  
+  // y=-2.49981(x+-687.318)+3490.75
+  double a1, c1, a2, c2, b1, b2;
+  double xi, yi;
 
-  // xi = ((l1.slope * l1.p.x + (l1.p.y * -1 )) - (l2.slope * l2.p.x + (l2.p.y * -1 ))) / (l1.slope - l2.slope);
-  // yi = l1.slope*(xi + (l1.p.x * -1) + l1.p.y);
+  a1 = l1.slope;
+  b1 = l1.p.y;
+  c1 = l1.p.x *l1.slope + l1.p.y;
+
+  a2 = l2.slope;
+  b2 = l2.p.y;
+  c2 = l2.p.x *l2.slope + l2.p.y;
+
+  xi = ((b1*c2)-(b2*c1)) / ((a1*b2)-(a2*b1));
+  yi = (a2*c1 - a1*c2) / ((a1*b2)-(a2*b1)) * -1;
 
 
-  x =  (l1.p.x * l1.slope - l2.p.x * l2.slope ) / (l1.slope - l2.slope) + (l1.p.y - l2.p.y);
-  y = (x + l1.p.x) * l1.slope + l1.p.y;
 
-  p->x = x;
-  p->y = y;
+  p->x = xi;
+  p->y = yi;
+
   return 1;
 }
 
@@ -134,7 +143,6 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
         (r3.p->lon - r1.p->lon) * lonLength,
         (r3.p->lat - r1.p->lat) * latLength}, 
         r3.r};
-
   // Calculate lines for circle intersections
   // l1 = intersection c1-c2
   // l2 = intersection c2-c3
@@ -156,11 +164,25 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
     // TODO: Handle error
   }
 
-  
 
   point_t *points[6] = {&p1, &p2, &p3, &p4, &p5, &p6};
   point_t *closestPoints[3];
   double shortestDistance = 10000000;
+
+  l1 = {p1, (p2.x - p1.x) / (p2.y - p1.y)};
+  l2 = {p3, (p4.x - p3.x) / (p4.y - p3.y)};
+  l3 = {p5, (p6.x - p5.x) / (p6.y - p5.y)};
+
+  printPoint("p1", p1);
+
+  point_t i1, i2, i3;
+  lineLineIntersect(l1, l2, &i1);
+  lineLineIntersect(l1, l3, &i2);
+  lineLineIntersect(l2, l3, &i3);
+
+  printLine("LINE 1", l1);
+  printLine("LINE 2", l2);
+  printLine("LINE 3", l3);
 
   for (int a = 0; a < 6; a++)
   {
@@ -197,13 +219,25 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
     yAvg += closestPoints[i]->y;
   }
 
+
   xAvg /= 3;
   yAvg /= 3;  
-
+  
   point_t result = {xAvg, yAvg};
   pointToCoord(*(r1.p), result, p);
 
-  // SUCCES
+  double xAvg2, yAvg2;
+  xAvg2 = (i1.x + i2.x + i3.x)/ 3;
+  yAvg2 = (i1.y + i2.y + i3.y)/ 3;
+
+  point_t result2 = {xAvg2, yAvg2};
+
+  printPoint("Estimate 2:", result2);
+
+  printPoint("POINT 2", p1);
+
+  coord_t estimate2;
+
   return 1;
 }
 
@@ -234,7 +268,10 @@ int pointToCoord(coord_t base, point_t p, coord_t *res)
 // THESE FUNCTIONS ARE FOR DEBUGGING ONLY
 void printLine(const char *c, line_t line)
 {
-	std::cout << "Line "<< c << "\nX = " << line.p.x << "\nY = " << line.p.y << "\nSlope = " << line.slope << "\n\n";
+  double degree = atan(line.slope) * (180/M_PI) + 180;
+	std::cout << "Line "<< c << "\nX = " << line.p.x << "\nY = " << line.p.y << "\nSlope = " << line.slope << 
+    "(" << degree << ") (" << fmod(degree + 180.0, 360.0) << ")\n" <<
+    "y = " << line.slope << "(x+"<< line.p.x << ")+" << line.p.y << "\n\n";
 }
 
 void printPoint(const char *c, point_t point)
