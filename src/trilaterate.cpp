@@ -89,17 +89,13 @@ int lineLineIntersect(line_t l1, line_t l2, point_t *p)
   double xi, yi;
 
   a1 = l1.slope;
-  b1 = l1.p.y;
   c1 = l1.p.x *l1.slope + l1.p.y;
 
   a2 = l2.slope;
-  b2 = l2.p.y;
   c2 = l2.p.x *l2.slope + l2.p.y;
 
-  xi = ((b1*c2)-(b2*c1)) / ((a1*b2)-(a2*b1));
-  yi = (a2*c1 - a1*c2) / ((a1*b2)-(a2*b1)) * -1;
-
-
+  xi = (c2-c1) / (a1-a2);
+  yi = (a2*c1 - a1*c2) / ((a1)-(a2)) * -1;
 
   p->x = xi;
   p->y = yi;
@@ -126,7 +122,7 @@ double latitudeDegreeDistance(double lat)
 	return (111132.92 - 559.82*cos(2*lat)) + (1.175*cos(4*lat)) + (0.0023*cos(6*lat));
 }
 
-int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
+int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord)
 {
   // Convert GPS into relative positions in meters
   // r1 is base
@@ -150,7 +146,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
   line_t l1, l2, l3;
 
   point_t p1, p2, p3, p4, p5, p6;
-
+  
   if (!circleCircleIntersection(c1, c2, &p1, &p2))
   {
     // TODO: handle error
@@ -169,20 +165,6 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
   point_t *closestPoints[3];
   double shortestDistance = 10000000;
 
-  l1 = {p1, (p2.x - p1.x) / (p2.y - p1.y)};
-  l2 = {p3, (p4.x - p3.x) / (p4.y - p3.y)};
-  l3 = {p5, (p6.x - p5.x) / (p6.y - p5.y)};
-
-  printPoint("p1", p1);
-
-  point_t i1, i2, i3;
-  lineLineIntersect(l1, l2, &i1);
-  lineLineIntersect(l1, l3, &i2);
-  lineLineIntersect(l2, l3, &i3);
-
-  printLine("LINE 1", l1);
-  printLine("LINE 2", l2);
-  printLine("LINE 3", l3);
 
   for (int a = 0; a < 6; a++)
   {
@@ -219,24 +201,24 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p)
     yAvg += closestPoints[i]->y;
   }
 
-
   xAvg /= 3;
   yAvg /= 3;  
   
-  point_t result = {xAvg, yAvg};
-  pointToCoord(*(r1.p), result, p);
+  point_t trilaterationResult = {xAvg, yAvg};
+  pointToCoord(*(r1.p), trilaterationResult, trilaterationCoord);
 
-  double xAvg2, yAvg2;
-  xAvg2 = (i1.x + i2.x + i3.x)/ 3;
-  yAvg2 = (i1.y + i2.y + i3.y)/ 3;
+  l1 = {p1, (p2.y - p1.y) / (p2.x - p1.x) * -1};
+  l2 = {p3, (p4.y - p3.y) / (p4.x - p3.x) * -1};
+  l3 = {p5, (p6.y - p5.y) / (p6.x - p5.x)* -1};
+  // At this point lines between intersections have been constructed
 
-  point_t result2 = {xAvg2, yAvg2};
+  point_t i1, i2, i3, iRelative;
+  lineLineIntersect(l1, l2, &i1);
+  lineLineIntersect(l2, l3, &i2);
+  lineLineIntersect(l1, l3, &i3);
 
-  printPoint("Estimate 2:", result2);
-
-  printPoint("POINT 2", p1);
-
-  coord_t estimate2;
+  point_t intersectionResult = {(i1.x + i2.x + i3.x) / 3 * -1, (i1.y + i2.y + i3.y) / 3};
+  pointToCoord(*(r1.p), intersectionResult, intersectionCoord);
 
   return 1;
 }

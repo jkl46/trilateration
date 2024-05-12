@@ -46,7 +46,7 @@ double latitudeDegreeDistance(double lat);
 
 double getDistance(coord_t p1, coord_t p2);
 
-int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *p);
+int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord);
 
 int pointToCoord(coord_t base, point_t p, coord_t *res);
 
