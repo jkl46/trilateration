@@ -146,6 +146,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   line_t l1, l2, l3;
 
   point_t p1, p2, p3, p4, p5, p6;
+
   
   if (!circleCircleIntersection(c1, c2, &p1, &p2))
   {
@@ -160,6 +161,21 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
     // TODO: Handle error
   }
 
+  // printPoint("p", p1);
+  // printPoint("p", p2);
+  // printPoint("p", p3);
+  // printPoint("p", p4);
+  // printPoint("p", p5);
+  // printPoint("p", p6);
+  
+  // printPointAsCoord("its 1", *(r1.p), p1);
+  // printPointAsCoord("its 2", *(r1.p), p2);
+
+  // printPointAsCoord("its 3", *(r1.p), p3);
+  // printPointAsCoord("its 4", *(r1.p), p4);
+
+  // printPointAsCoord("its 5", *(r1.p), p5);
+  // printPointAsCoord("its 6", *(r1.p), p6);
 
   point_t *points[6] = {&p1, &p2, &p3, &p4, &p5, &p6};
   point_t *closestPoints[3];
@@ -175,9 +191,10 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
         if(a != b && b != c && a != c)
         {
           double distance = 
-            PYTHAG(abs(abs(points[a]->x) - abs(points[b]->x)), abs(abs(points[a]->y) - abs(points[b]->y))) + // a-b
-            PYTHAG(abs(abs(points[b]->x) - abs(points[c]->x)), abs(abs(points[b]->y) - abs(points[c]->y))) + // b-c 
-            PYTHAG(abs(abs(points[a]->x) - abs(points[c]->x)), abs(abs(points[a]->y) - abs(points[c]->y))); // a-c
+            PYTHAG(getDelta(points[a]->x, points[b]->x), getDelta(points[a]->y, points[b]->y)) +  // a-b
+            PYTHAG(getDelta(points[b]->x, points[c]->x), getDelta(points[b]->y, points[c]->y)) +  // b-c
+            PYTHAG(getDelta(points[a]->x, points[c]->x), getDelta(points[a]->y, points[c]->y));   // a-c
+
           if (distance < shortestDistance)
           {
             closestPoints[0] = points[a];
@@ -190,7 +207,6 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
       }
     }
   }
-  
 
   // calculate average of intersection
   // TODO: Handle average if no 3 points
@@ -203,6 +219,8 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
 
   xAvg /= 3;
   yAvg /= 3;  
+
+
   
   point_t trilaterationResult = {xAvg, yAvg};
   pointToCoord(*(r1.p), trilaterationResult, trilaterationCoord);
@@ -245,6 +263,14 @@ int pointToCoord(coord_t base, point_t p, coord_t *res)
     res->lon = p.x / lonLength + base.lon; 
 
     return 1;
+}
+
+double getDelta(double a, double b)
+{
+  if (a < b)
+    return abs(a - b);
+  else
+    return abs(b - a);
 }
 
 // THESE FUNCTIONS ARE FOR DEBUGGING ONLY

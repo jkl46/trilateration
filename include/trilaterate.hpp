@@ -50,6 +50,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
 
 int pointToCoord(coord_t base, point_t p, coord_t *res);
 
+double getDelta(double a, double b);
 
 // #warning Disable or erase testing functions for trilateration at deployment in file: include/trilaterate.hpp!
 

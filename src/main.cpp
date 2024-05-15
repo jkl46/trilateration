@@ -4,33 +4,51 @@
 #include <time.h>       
 #include <math.h>
 #include <fstream>
+#include <string>
 
-
-int main()
+int main(int argc, char **argv)
 {
     double realLength1, realLength2, realLength3;
     coord_t trilaterationCoord, intersectionCoord;
 
-    coord_t monitor1 = {53.02315707965995, 6.051166966717045};
-    coord_t monitor2 = {53.04565562998146, 6.051170158444927};
-    coord_t monitor3 = {53.03045156041614, 6.087672338575723};
-    coord_t hive = {53.04334815287351, 6.078294935686204};
+    coord_t monitor1, monitor2, monitor3, hive;
+    LOG(argc)
+    if (argc == 9)
+    {
+        #define stod std::stod
+        monitor1 = {stod(argv[1]),stod(argv[2])};
+        monitor2 = {stod(argv[3]),stod(argv[4])};
+        monitor3 = {stod(argv[5]),stod(argv[6])};
+        hive = {stod(argv[7]),stod(argv[8])};
 
-    realLength1 = getDistance(monitor1, hive) * 1.05;
-    realLength2 = getDistance(monitor2, hive) * 0.9;
-    realLength3 = getDistance(monitor3, hive) * 0.9;
+        #pragma endregion
+    } else
+    {
+        LOG("No input provided! using sample coordinates")
+        monitor1 = {52.42209520256235,6.384834648239419};
+        monitor2 = {52.42401961969845,6.384311413786394};
+        monitor3 = {52.41931876736916,6.382396416741736};
+        hive = {52.42238050706415,6.379774525289168};
+    }
+
+
+    realLength1 = getDistance(monitor1, hive);
+    realLength2 = getDistance(monitor2, hive);
+    realLength3 = getDistance(monitor3, hive);
     
-    std::cout << "Length to hive " << "\nMonitor 1: " << realLength1 << "\nMonitor 2: " << realLength2 << "\nMonitor 3: " << realLength3 << "\n\n";
+    std::cout << "length to hive " << "\nMonitor 1: " << realLength1 << "\nMonitor 2: " << realLength2 << "\nMonitor 3: " << realLength3 << "\n\n";
 
     record_t r1 = {&monitor1, realLength1};
     record_t r2 = {&monitor2, realLength2};
     record_t r3 = {&monitor3, realLength3};
+
     trilaterate(r1, r2, r3, &trilaterationCoord, &intersectionCoord);
 
     printCoord("Trilaterate estimation", trilaterationCoord);
     printCoord("Intersection estimation", intersectionCoord);
 
-    #define TEST_WITH_SCALE
+
+    // #define TEST_WITH_SCALE
     #ifdef TEST_WITH_SCALE
     double newLength1, newLength2, newLength3;
     double start = 0.8;
