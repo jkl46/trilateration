@@ -1,7 +1,6 @@
 #ifndef TRILATERATE_HPP
 #define TRILATERATE_HPP
 
-
 # define M_PI 3.14159265358979323846
 #define PYTHAG(x1, x2) sqrt(pow(x1, 2.0) + pow(x2, 2.0))
 
