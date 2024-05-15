@@ -1,8 +1,8 @@
 #include <math.h>
 #include <trilaterate.hpp>
-
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 
 // Reference: https://paulbourke.net/geometry/circlesphere/
 int circleCircleIntersection(circle_t c0, circle_t c1, point_t *p1, point_t *p2)
@@ -122,7 +122,7 @@ double latitudeDegreeDistance(double lat)
 	return (111132.92 - 559.82*cos(2*lat)) + (1.175*cos(4*lat)) + (0.0023*cos(6*lat));
 }
 
-int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord)
+int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord, std::ofstream &exportFile)
 {
   // Convert GPS into relative positions in meters
   // r1 is base
@@ -238,6 +238,65 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   point_t intersectionResult = {(i1.x + i2.x + i3.x) / 3 * -1, (i1.y + i2.y + i3.y) / 3};
   pointToCoord(*(r1.p), intersectionResult, intersectionCoord);
 
+//
+  coord_t x1, x2, x3, x4, x5, x6, x7, x8, x9;
+  pointToCoord(*r1.p, p1, &x1);
+  pointToCoord(*r1.p, p2, &x2);
+  pointToCoord(*r1.p, p3, &x3);
+  pointToCoord(*r1.p, p4, &x4);
+  pointToCoord(*r1.p, p5, &x5);
+  pointToCoord(*r1.p, p6, &x6);
+
+  pointToCoord(*r1.p, *closestPoints[0], &x7);
+  pointToCoord(*r1.p, *closestPoints[1], &x8);
+  pointToCoord(*r1.p, *closestPoints[2], &x9);
+
+  exportFile << "[intersections:point]\n";
+  exportFile << "monitor_1-2_p1" << "=" << x1.lat << "," << x1.lon << "\n";
+  exportFile << "monitor_1-2_p2" << "=" << x2.lat << "," << x2.lon << "\n";
+
+  exportFile << "monitor_2-3_p1"  << "=" << x3.lat << "," << x3.lon << "\n";
+  exportFile << "monitor_2-3_p2"  << "=" << x4.lat << "," << x4.lon << "\n";
+
+  exportFile << "monitor_1-3_p1"  << "=" << x5.lat << "," << x5.lon << "\n";
+  exportFile << "monitor_1-3_p2"  << "=" << x6.lat << "," << x6.lon << "\n";
+
+  exportFile << "[trilaterate_intersections:point]\n";
+  exportFile << "chosen_point_1"  << "=" << x7.lat << "," << x7.lon << "\n";
+  exportFile << "chosen_point_2"  << "=" << x8.lat << "," << x8.lon << "\n";
+  exportFile << "chosen_point_3"  << "=" << x9.lat << "," << x9.lon << "\n";
+
+  exportFile << "[results:point]\n";
+  exportFile << "trilaterate prediction"  << "=" << trilaterationCoord->lat << "," << trilaterationCoord->lon << "\n";
+  exportFile << "intersect prediction"  << "=" << intersectionCoord->lat << "," << intersectionCoord->lon << "\n";
+
+  exportFile << "[lines:line]\n";
+  exportFile << "line_1_2"  << "=" << x1.lat << "," << x1.lon << " " << x2.lat << "," << x2.lon << "\n";
+  exportFile << "line_2_3"  << "=" << x3.lat << "," << x3.lon << " " << x4.lat << "," << x4.lon << "\n";
+  exportFile << "line_1_3"  << "=" << x5.lat << "," << x5.lon << " " << x6.lat << "," << x6.lon << "\n";
+
+  exportFile << "[circles:circle]\n";
+  circle_t circles[3] = {c1, c2, c3};
+  int resolution = 50;
+  for (int n = 0; n < 3; n++)
+  {
+    exportFile << "circle" << n+1 << "=";
+    for (int i = 0; i < resolution + 1; i++)
+    {
+      circle_t c = circles[n];
+      double angle = (2*M_PI / resolution) * i;
+      double x, y;
+      x = c.p.x + c.r * cos(angle);
+      y = c.p.y + c.r * sin(angle);
+      coord_t coordOfAngle;
+      pointToCoord(*r1.p, {x, y}, &coordOfAngle);
+      exportFile << coordOfAngle.lon << "," << coordOfAngle.lat << ",0 ";
+    }
+    exportFile << "\n";
+  }
+
+  // exportFile << "trilaterate"  << "=" << trilaterationCoord->lat << "," << trilaterationCoord->lon << "\n";
+//
   return 1;
 }
 

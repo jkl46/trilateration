@@ -2,6 +2,7 @@
 #define TRILATERATE_HPP
 
 #include <iostream>
+#include <fstream>
 
 # define M_PI 3.14159265358979323846
 #define PYTHAG(x1, x2) sqrt(pow(x1, 2.0) + pow(x2, 2.0))
@@ -46,7 +47,7 @@ double latitudeDegreeDistance(double lat);
 
 double getDistance(coord_t p1, coord_t p2);
 
-int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord);
+int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoord, coord_t *intersectionCoord, std::ofstream &exportFile);
 
 int pointToCoord(coord_t base, point_t p, coord_t *res);
 

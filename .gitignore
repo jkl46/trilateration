@@ -1,8 +1,9 @@
 *
 !.gitignore
 !CMakeLists.txt
-
 !**/*.cpp
 !**/*.hpp
 !/src/
 !/include/
+!kml.py
+!main.py

@@ -6,13 +6,17 @@
 #include <fstream>
 #include <string>
 
+
 int main(int argc, char **argv)
 {
+//
+    std::ofstream exportFile("trilaterate.ini");
+//
+
     double realLength1, realLength2, realLength3;
     coord_t trilaterationCoord, intersectionCoord;
-
     coord_t monitor1, monitor2, monitor3, hive;
-    LOG(argc)
+
     if (argc == 9)
     {
         #define stod std::stod
@@ -24,17 +28,18 @@ int main(int argc, char **argv)
         #pragma endregion
     } else
     {
-        LOG("No input provided! using sample coordinates")
+        LOG("No valid input provided! using sample coordinates")
         monitor1 = {52.42209520256235,6.384834648239419};
         monitor2 = {52.42401961969845,6.384311413786394};
         monitor3 = {52.41931876736916,6.382396416741736};
         hive = {52.42238050706415,6.379774525289168};
     }
 
+    double scale = 1.1;
 
-    realLength1 = getDistance(monitor1, hive);
-    realLength2 = getDistance(monitor2, hive);
-    realLength3 = getDistance(monitor3, hive);
+    realLength1 = getDistance(monitor1, hive) * scale + 60;
+    realLength2 = getDistance(monitor2, hive) * scale - 50;
+    realLength3 = getDistance(monitor3, hive) * scale + 50;
     
     std::cout << "length to hive " << "\nMonitor 1: " << realLength1 << "\nMonitor 2: " << realLength2 << "\nMonitor 3: " << realLength3 << "\n\n";
 
@@ -42,12 +47,22 @@ int main(int argc, char **argv)
     record_t r2 = {&monitor2, realLength2};
     record_t r3 = {&monitor3, realLength3};
 
-    trilaterate(r1, r2, r3, &trilaterationCoord, &intersectionCoord);
+
+    
+    trilaterate(r1, r2, r3, &trilaterationCoord, &intersectionCoord, exportFile);
+
 
     printCoord("Trilaterate estimation", trilaterationCoord);
     printCoord("Intersection estimation", intersectionCoord);
 
-
+//
+    exportFile << "[main_points:point]\n";
+    exportFile << "monitor1" << "=" << monitor1.lat << "," << monitor1.lon << "\n";
+    exportFile << "monitor2" << "=" << monitor2.lat << "," << monitor2.lon << "\n";
+    exportFile << "monitor3" << "=" << monitor3.lat << "," << monitor3.lon << "\n";
+    exportFile << "hive" << "=" << hive.lat << "," << hive.lon << "\n";
+    exportFile.close();
+//
     // #define TEST_WITH_SCALE
     #ifdef TEST_WITH_SCALE
     double newLength1, newLength2, newLength3;
