@@ -146,7 +146,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   line_t l1, l2, l3;
 
   point_t p1, p2, p3, p4, p5, p6;
-
+  
   
   if (!circleCircleIntersection(c1, c2, &p1, &p2))
   {
@@ -161,25 +161,10 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
     // TODO: Handle error
   }
 
-  // printPoint("p", p1);
-  // printPoint("p", p2);
-  // printPoint("p", p3);
-  // printPoint("p", p4);
-  // printPoint("p", p5);
-  // printPoint("p", p6);
-  
-  // printPointAsCoord("its 1", *(r1.p), p1);
-  // printPointAsCoord("its 2", *(r1.p), p2);
-
-  // printPointAsCoord("its 3", *(r1.p), p3);
-  // printPointAsCoord("its 4", *(r1.p), p4);
-
-  // printPointAsCoord("its 5", *(r1.p), p5);
-  // printPointAsCoord("its 6", *(r1.p), p6);
 
   point_t *points[6] = {&p1, &p2, &p3, &p4, &p5, &p6};
   point_t *closestPoints[3];
-  double shortestDistance = 10000000;
+  double shortestDistance = 0xFFFFFFFFFFFFFFFF;
 
 
   for (int a = 0; a < 6; a++)
@@ -219,7 +204,6 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
 
   xAvg /= 3;
   yAvg /= 3;  
-
 
   
   point_t trilaterationResult = {xAvg, yAvg};
@@ -268,7 +252,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
 
   exportFile << "[results:point]\n";
   exportFile << "trilaterate prediction"  << "=" << trilaterationCoord->lat << "," << trilaterationCoord->lon << "\n";
-  exportFile << "intersect prediction"  << "=" << intersectionCoord->lat << "," << intersectionCoord->lon << "\n";
+  exportFile << "triangulate prediction"  << "=" << intersectionCoord->lat << "," << intersectionCoord->lon << "\n";
 
   exportFile << "[lines:line]\n";
   exportFile << "line_1_2"  << "=" << x1.lat << "," << x1.lon << " " << x2.lat << "," << x2.lon << "\n";

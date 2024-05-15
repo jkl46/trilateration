@@ -35,11 +35,11 @@ int main(int argc, char **argv)
         hive = {52.42238050706415,6.379774525289168};
     }
 
-    double scale = 1.1;
+    double scale = 1.0;
 
-    realLength1 = getDistance(monitor1, hive) * scale + 60;
-    realLength2 = getDistance(monitor2, hive) * scale - 50;
-    realLength3 = getDistance(monitor3, hive) * scale + 50;
+    realLength1 = getDistance(monitor1, hive) * scale;
+    realLength2 = getDistance(monitor2, hive) * scale;
+    realLength3 = getDistance(monitor3, hive) * scale;
     
     std::cout << "length to hive " << "\nMonitor 1: " << realLength1 << "\nMonitor 2: " << realLength2 << "\nMonitor 3: " << realLength3 << "\n\n";
 
