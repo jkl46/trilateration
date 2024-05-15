@@ -145,28 +145,29 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   // l3 = intersection c1-c3
   line_t l1, l2, l3;
 
-  point_t p1, p2, p3, p4, p5, p6;
+  // Store points in this array
+  point_t intersectionPoints[3][2];
   
-  
-  if (!circleCircleIntersection(c1, c2, &p1, &p2))
+  if (!circleCircleIntersection(c1, c2, &intersectionPoints[0][0], &intersectionPoints[0][1]))
   {
     // TODO: handle error
   }
-  if (!circleCircleIntersection(c2, c3, &p3, &p4))
+  if (!circleCircleIntersection(c2, c3, &intersectionPoints[1][0], &intersectionPoints[1][1]))
   {
     // TODO: Handle error
   }
-  if (!circleCircleIntersection(c1, c3, &p5, &p6))
+  if (!circleCircleIntersection(c1, c3, &intersectionPoints[2][0], &intersectionPoints[2][1]))
   {
     // TODO: Handle error
   }
 
-
-  point_t *points[6] = {&p1, &p2, &p3, &p4, &p5, &p6};
   point_t *closestPoints[3];
   double shortestDistance = 0xFFFFFFFFFFFFFFFF;
 
+  //table connected 1d index to 2d. For easy of use. inefficient.
+  point_t *pointMap[6] = {&intersectionPoints[0][0], &intersectionPoints[0][1], &intersectionPoints[1][0], &intersectionPoints[1][1], &intersectionPoints[2][0], &intersectionPoints[2][1]};
 
+  // Find the lowest distance between a group of 3 points
   for (int a = 0; a < 6; a++)
   {
     for (int b = 0; b < 6; b++)
@@ -176,15 +177,15 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
         if(a != b && b != c && a != c)
         {
           double distance = 
-            PYTHAG(getDelta(points[a]->x, points[b]->x), getDelta(points[a]->y, points[b]->y)) +  // a-b
-            PYTHAG(getDelta(points[b]->x, points[c]->x), getDelta(points[b]->y, points[c]->y)) +  // b-c
-            PYTHAG(getDelta(points[a]->x, points[c]->x), getDelta(points[a]->y, points[c]->y));   // a-c
+            PYTHAG(getDelta(pointMap[a]->x, pointMap[b]->x), getDelta(pointMap[a]->y, pointMap[b]->y)) +  // a-b
+            PYTHAG(getDelta(pointMap[b]->x, pointMap[c]->x), getDelta(pointMap[b]->y, pointMap[c]->y)) +  // b-c
+            PYTHAG(getDelta(pointMap[a]->x, pointMap[c]->x), getDelta(pointMap[a]->y, pointMap[c]->y));   // a-c
 
           if (distance < shortestDistance)
           {
-            closestPoints[0] = points[a];
-            closestPoints[1] = points[b];
-            closestPoints[2] = points[c];
+            closestPoints[0] = pointMap[a];
+            closestPoints[1] = pointMap[b];
+            closestPoints[2] = pointMap[c];
             shortestDistance = distance;
           }
 
@@ -201,35 +202,36 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
     xAvg += closestPoints[i]->x;
     yAvg += closestPoints[i]->y;
   }
-
-  xAvg /= 3;
-  yAvg /= 3;  
-
   
-  point_t trilaterationResult = {xAvg, yAvg};
+  // Calculate average and confirm estimated trilateration coordinate
+  point_t trilaterationResult = {xAvg / 3, yAvg / 3};
   pointToCoord(*(r1.p), trilaterationResult, trilaterationCoord);
 
-  l1 = {p1, (p2.y - p1.y) / (p2.x - p1.x) * -1};
-  l2 = {p3, (p4.y - p3.y) / (p4.x - p3.x) * -1};
-  l3 = {p5, (p6.y - p5.y) / (p6.x - p5.x)* -1};
+  // Now for the triangulation
+  // Construct lines 
+  l1 = {intersectionPoints[0][0], (intersectionPoints[0][1].y - intersectionPoints[0][0].y) / (intersectionPoints[0][1].x - intersectionPoints[0][0].x) * -1};  // Line 1-2
+  l2 = {intersectionPoints[1][0], (intersectionPoints[1][1].y - intersectionPoints[1][0].y) / (intersectionPoints[1][1].x - intersectionPoints[1][0].x) * -1}; // line 2-3
+  l3 = {intersectionPoints[2][0], (intersectionPoints[2][1].y - intersectionPoints[2][0].y) / (intersectionPoints[2][1].x - intersectionPoints[2][0].x) * -1}; // line 1-3
   // At this point lines between intersections have been constructed
 
-  point_t i1, i2, i3, iRelative;
-  lineLineIntersect(l1, l2, &i1);
-  lineLineIntersect(l2, l3, &i2);
-  lineLineIntersect(l1, l3, &i3);
+  // Calculate crossing point of lines between circle intersections
+  point_t lineIntersection[3];
+  lineLineIntersect(l1, l2, &lineIntersection[0]);
+  lineLineIntersect(l2, l3, &lineIntersection[1]);
+  lineLineIntersect(l1, l3, &lineIntersection[2]);
 
-  point_t intersectionResult = {(i1.x + i2.x + i3.x) / 3 * -1, (i1.y + i2.y + i3.y) / 3};
+  point_t intersectionResult = {(lineIntersection[0].x + lineIntersection[1].x + lineIntersection[2].x) / 3 * -1, (lineIntersection[0].y + lineIntersection[1].y +lineIntersection[2].y) / 3};
   pointToCoord(*(r1.p), intersectionResult, intersectionCoord);
+  // DONE
 
-//
+// AFTER THIS IS EXPORT TO INI
   coord_t x1, x2, x3, x4, x5, x6, x7, x8, x9;
-  pointToCoord(*r1.p, p1, &x1);
-  pointToCoord(*r1.p, p2, &x2);
-  pointToCoord(*r1.p, p3, &x3);
-  pointToCoord(*r1.p, p4, &x4);
-  pointToCoord(*r1.p, p5, &x5);
-  pointToCoord(*r1.p, p6, &x6);
+  pointToCoord(*r1.p, intersectionPoints[0][0], &x1);
+  pointToCoord(*r1.p, intersectionPoints[0][1], &x2);
+  pointToCoord(*r1.p, intersectionPoints[1][0], &x3);
+  pointToCoord(*r1.p, intersectionPoints[1][1], &x4);
+  pointToCoord(*r1.p, intersectionPoints[2][0], &x5);
+  pointToCoord(*r1.p, intersectionPoints[2][1], &x6);
 
   pointToCoord(*r1.p, *closestPoints[0], &x7);
   pointToCoord(*r1.p, *closestPoints[1], &x8);
