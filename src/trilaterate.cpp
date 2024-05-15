@@ -1,8 +1,10 @@
 #include <math.h>
 #include <trilaterate.hpp>
-#include <iostream>
-#include <algorithm>
+
+#ifdef EXPORT_TO_FILE
 #include <fstream>
+#include <iostream>
+#endif
 
 // Reference: https://paulbourke.net/geometry/circlesphere/
 int circleCircleIntersection(circle_t c0, circle_t c1, point_t *p1, point_t *p2)
@@ -74,7 +76,6 @@ int circleCircleIntersection(circle_t c0, circle_t c1, point_t *p1, point_t *p2)
   return 1;
 }
 
-
 // Calculate intersection between 2 lines. Store result in point_t p
 // Returns:
 //  0     Fail
@@ -139,6 +140,8 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
         (r3.p->lon - r1.p->lon) * lonLength,
         (r3.p->lat - r1.p->lat) * latLength}, 
         r3.r};
+
+
   // Calculate lines for circle intersections
   // l1 = intersection c1-c2
   // l2 = intersection c2-c3
@@ -177,9 +180,9 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
         if(a != b && b != c && a != c)
         {
           double distance = 
-            PYTHAG(getDelta(pointMap[a]->x, pointMap[b]->x), getDelta(pointMap[a]->y, pointMap[b]->y)) +  // a-b
-            PYTHAG(getDelta(pointMap[b]->x, pointMap[c]->x), getDelta(pointMap[b]->y, pointMap[c]->y)) +  // b-c
-            PYTHAG(getDelta(pointMap[a]->x, pointMap[c]->x), getDelta(pointMap[a]->y, pointMap[c]->y));   // a-c
+            PYTHAG(getDifference(pointMap[a]->x, pointMap[b]->x), getDifference(pointMap[a]->y, pointMap[b]->y)) +  // a-b
+            PYTHAG(getDifference(pointMap[b]->x, pointMap[c]->x), getDifference(pointMap[b]->y, pointMap[c]->y)) +  // b-c
+            PYTHAG(getDifference(pointMap[a]->x, pointMap[c]->x), getDifference(pointMap[a]->y, pointMap[c]->y));   // a-c
 
           if (distance < shortestDistance)
           {
@@ -224,7 +227,8 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   pointToCoord(*(r1.p), intersectionResult, intersectionCoord);
   // DONE
 
-// AFTER THIS IS EXPORT TO INI
+  #ifdef EXPORT_TO_FILE
+// AFTER THIS IS FOR EXPORT TO INI
   coord_t x1, x2, x3, x4, x5, x6, x7, x8, x9;
   pointToCoord(*r1.p, intersectionPoints[0][0], &x1);
   pointToCoord(*r1.p, intersectionPoints[0][1], &x2);
@@ -262,6 +266,7 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
   exportFile << "line_1_3"  << "=" << x5.lat << "," << x5.lon << " " << x6.lat << "," << x6.lon << "\n";
 
   exportFile << "[circles:circle]\n";
+
   circle_t circles[3] = {c1, c2, c3};
   int resolution = 50;
   for (int n = 0; n < 3; n++)
@@ -280,12 +285,12 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
     }
     exportFile << "\n";
   }
-
-  // exportFile << "trilaterate"  << "=" << trilaterationCoord->lat << "," << trilaterationCoord->lon << "\n";
+  #endif
 //
   return 1;
 }
 
+// Return length in meters between 2 coordinates
 double getDistance(coord_t p1, coord_t p2)
 {
     double res, xi, yi;
@@ -299,6 +304,7 @@ double getDistance(coord_t p1, coord_t p2)
     return abs(PYTHAG(xi, yi));
 }
 
+// Set point as coordinate from base coordinate
 int pointToCoord(coord_t base, point_t p, coord_t *res)
 {
     double latLength = latitudeDegreeDistance(base.lat);
@@ -310,7 +316,8 @@ int pointToCoord(coord_t base, point_t p, coord_t *res)
     return 1;
 }
 
-double getDelta(double a, double b)
+// Return length of a to b
+double getDifference(double a, double b)
 {
   if (a < b)
     return abs(a - b);
@@ -318,7 +325,96 @@ double getDelta(double a, double b)
     return abs(b - a);
 }
 
-// THESE FUNCTIONS ARE FOR DEBUGGING ONLY
+int estimate(int argc, char **argv)
+{
+    #ifdef EXPORT_TO_FILE
+    std::ofstream exportFile("trilaterate.ini");
+    #else
+    std::ofstream exportFile;
+    #endif
+
+    double realLength1, realLength2, realLength3;
+    coord_t trilaterationCoord, intersectionCoord;
+    coord_t monitor1, monitor2, monitor3, hive;
+
+    if (argc == 9)
+    {
+        #define stod std::stod
+        monitor1 = {stod(argv[1]),stod(argv[2])};
+        monitor2 = {stod(argv[3]),stod(argv[4])};
+        monitor3 = {stod(argv[5]),stod(argv[6])};
+        hive = {stod(argv[7]),stod(argv[8])};
+
+        #pragma endregion
+    } else
+    {
+        monitor1 = {52.42209520256235,6.384834648239419};
+        monitor2 = {52.42401961969845,6.384311413786394};
+        monitor3 = {52.41931876736916,6.382396416741736};
+        hive = {52.42238050706415,6.379774525289168};
+    }
+
+    double scale = 1.0;
+
+    realLength1 = getDistance(monitor1, hive) * scale;
+    realLength2 = getDistance(monitor2, hive) * scale;
+    realLength3 = getDistance(monitor3, hive) * scale;
+    
+    record_t r1 = {&monitor1, realLength1};
+    record_t r2 = {&monitor2, realLength2};
+    record_t r3 = {&monitor3, realLength3};
+
+    
+    trilaterate(r1, r2, r3, &trilaterationCoord, &intersectionCoord, exportFile);
+
+    #ifdef EXPORT_TO_FILE
+//
+    printCoord("Trilaterate estimation", trilaterationCoord);
+    printCoord("Intersection estimation", intersectionCoord);
+
+    exportFile << "[main_points:point]\n";
+    exportFile << "monitor1" << "=" << monitor1.lat << "," << monitor1.lon << "\n";
+    exportFile << "monitor2" << "=" << monitor2.lat << "," << monitor2.lon << "\n";
+    exportFile << "monitor3" << "=" << monitor3.lat << "," << monitor3.lon << "\n";
+    exportFile << "hive" << "=" << hive.lat << "," << hive.lon << "\n";
+    #endif
+    exportFile.close();
+//
+    // #define TEST_WITH_SCALE
+    #ifdef TEST_WITH_SCALE
+    double newLength1, newLength2, newLength3;
+    double start = 0.8;
+    double step = 0.0004;
+    double n = 1000;
+    double scale = start;
+
+    std::ofstream trilaterateFile("trilaterate.txt");
+    std::ofstream intersectionFile("intersection.txt");
+
+    std::cout << "Testing " << n << " Points with length scaled from " << start << " up too " << scale + (n * step) << "\n";
+    for (int i = 0; i < n; i++)
+    {
+        scale += step;
+        r1.r = realLength1 * scale;
+        r2.r = realLength2 * scale;
+        r3.r = realLength3 * scale;
+
+        trilaterate(r1, r2, r3, &trilaterationCoord, &intersectionCoord);
+        trilaterateFile << trilaterationCoord.lat << " " << trilaterationCoord.lon << "\n";
+        intersectionFile << intersectionCoord.lat << " " << intersectionCoord.lon << "\n";
+    }
+    trilaterateFile.close();
+    intersectionFile.close();
+
+    std::cout << "Coordinates written to trilaterate.txt and intersection.txt";
+
+    #endif
+	return 0;
+}
+
+
+#ifdef EXPORT_TO_FILE
+// THESE FUNCTIONS ARE FOR DEBUGGING/PRINTING ONLY
 void printLine(const char *c, line_t line)
 {
   double degree = atan(line.slope) * (180/M_PI) + 180;
@@ -349,3 +445,5 @@ void printPointAsCoord(const char *c, coord_t base, point_t point)
   lonLength = longitudeDegreeDistane(base.lat);
   std::cout << "Point " << c << "\nLatitude = " << (point.y / latLength) + base.lat <<  "\nLongitude = " << (point.x / lonLength) + base.lon << "\n\n";
 }
+#endif
+

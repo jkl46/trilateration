@@ -1,13 +1,15 @@
 #ifndef TRILATERATE_HPP
 #define TRILATERATE_HPP
 
-#include <iostream>
-#include <fstream>
 
 # define M_PI 3.14159265358979323846
 #define PYTHAG(x1, x2) sqrt(pow(x1, 2.0) + pow(x2, 2.0))
 
-
+#define EXPORT_TO_FILE
+#ifdef EXPORT_TO_FILE
+#include <iostream>
+#include <fstream>
+#endif
 
 typedef struct {
 	double x;
@@ -51,10 +53,13 @@ int trilaterate(record_t r1, record_t r2, record_t r3, coord_t *trilaterationCoo
 
 int pointToCoord(coord_t base, point_t p, coord_t *res);
 
-double getDelta(double a, double b);
+int estimate(int argc, char **argv);
+
+double getDifference(double a, double b);
 
 // #warning Disable or erase testing functions for trilateration at deployment in file: include/trilaterate.hpp!
 
+#ifdef EXPORT_TO_FILE
 # define LOG(x) std::cout << x << std::endl;
 
 void printLine(const char *c, line_t line);
@@ -66,5 +71,6 @@ void printCoord(const char *c, coord_t coord);
 void printCircle(const char *c, circle_t circle);
 
 void printPointAsCoord(const char *c, coord_t base, point_t point);
+#endif
 
 #endif // TRILATERATE_HPP
